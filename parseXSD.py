@@ -17,7 +17,7 @@ def searchIncludes(NS, typename):
 
     return hit
  
-def saxparse(node, indent=''):
+def parsefile(node, indent=''):
     for child in node:
         if child.tag == NS+'element':
             display=[' ']
@@ -28,16 +28,16 @@ def saxparse(node, indent=''):
             typenode = searchIncludes(NS, child.attrib['type'])
 
             if typenode is not None:
-                saxparse(typenode, indent+'  ')
+                parsefile(typenode, indent+'  ')
         elif child.tag == NS+'restriction':
             if showrestrictions:
                 print(indent, child.attrib['base'])
-            saxparse(child, indent+'  ')
+            parsefile(child, indent+'  ')
         elif child.tag in [NS+'minLength', NS+'maxLength', NS+'pattern']:
             if showrestrictions:
                 print(indent, child.tag, child.attrib['value'])
         else:
-            saxparse(child, indent+'  ')
+            parsefile(child, indent+'  ')
 ###############################
 
 # The main file:
@@ -60,4 +60,4 @@ for inclfile in includefiles:
     print('Including ' + inclfile)
     inclroots[inclfile] = etree.parse(inclfile).getroot()
 
-saxparse(root)
+parsefile(root)
