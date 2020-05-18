@@ -3,7 +3,11 @@ import sys
 
 # This produces a full description of the elements given in a Schema definition.
 # I.e. given a primary XSD, which possibly includes others, this will search for all elements and their descriptions.
+# Should I check for multiple targetnamespaces?
 
+#--------------------------------------------------------------------------------------------------
+# Search include files for a given type name.
+# Should I check for duplicate definitions?
 def searchIncludes(NS, typename):
     hit = None
     for key in inclroots:
