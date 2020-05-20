@@ -1,67 +1,83 @@
 import xml.etree.ElementTree as etree
 import sys
+import datetime
 
 # This produces a full description of the elements given in a Schema definition.
 # I.e. given a primary XSD, which possibly includes others, this will search for all elements and their descriptions.
 # Should I check for multiple targetnamespaces?
 
 #--------------------------------------------------------------------------------------------------
+def writeFile(string, filename):
+    f = open(filename, "w", encoding="utf-8")
+    f.write(string)
+    f.close()
+
 # Search include files for a given type name.
 # Should I check for duplicate definitions?
 def searchIncludes(NS, typename):
-    hit = None
-    for key in inclroots:
-        res = inclroots[key].findall(NS + 'complexType[@name="' + typename + '"]')
-        if len(res) > 0:
-            hit = res
+    for key in xsdroots:
+        res = xsdroots[key].findall(NS + 'complexType[@name="' + typename + '"]')
+        if len(res)>0:
+            return res
+        res = xsdroots[key].findall(NS + 'simpleType[@name="' + typename + '"]')
+        if len(res)>0:
+            return res
 
-        res = inclroots[key].findall(NS + 'simpleType[@name="' + typename + '"]')
-        if len(res) > 0:
-            hit = res
-
-    return hit
+    print('NB: type ', typename, ' not found.')
+    return None
  
-def parsefile(node, indent=''):
+def parsefile(node, parent, indent=''):
     for child in node:
         if child.tag == NS+'element':
+            childxml = etree.SubElement(parent, child.attrib['name'])
             display=[' ']
             for attr in ['minOccurs', 'maxOccurs']:
                 if attr in child.attrib:
-                    display.append(attr+':'+child.attrib[attr])
-            print(indent + child.attrib['name'] + ' '.join(display))
-            typenode = searchIncludes(NS, child.attrib['type'])
+                    childxml.set(attr, child.attrib[attr])
 
+            typenode = searchIncludes(NS, child.attrib['type'])
             if typenode is not None:
-                parsefile(typenode, indent+'  ')
+                parsefile(typenode, childxml, indent+'  ')
         elif child.tag == NS+'restriction':
             if showrestrictions:
-                print(indent, child.attrib['base'])
-            parsefile(child, indent+'  ')
+                parent.text = child.attrib['base']
+            parsefile(child, parent, indent+'  ')
         elif child.tag in [NS+'minLength', NS+'maxLength', NS+'pattern']:
             if showrestrictions:
-                print(indent, child.tag, child.attrib['value'])
+                if parent.text is not None:
+                    parent.text = parent.text + ' ' + child.attrib['value']
+                else:
+                    parent.text = child.attrib['value']
         else:
-            parsefile(child, indent+'  ')
+            parsefile(child, parent, indent+'  ')
+
+    return parent
+
 ###############################
 
-# The main file:
-xsdfilename = 'IE4N10.xsd'
+# The root element:
+rootelementname = 'IE4N10'
+rootelementtype = 'IE4N10Type'
 # This contains the namespace of the XSD, not the targetnamespace of the XML specified by the XSD:
 NS = '{http://www.w3.org/2001/XMLSchema}'
-# The files that are included by the main file, and also any that are included by an include file:
-includefiles = ['ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
+# All xsd files describing this xml:
+xsdfiles = ['IE4N10.xsd', 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
 
 showrestrictions = True
 
-# Parse the main file.
-tree = etree.parse(xsdfilename)
-root = tree.getroot()
-
-# Parse the includefiles, and store their respective roots
+# Parse the xsd files, and store their respective roots
 # under the filename.
-inclroots = {}
-for inclfile in includefiles:
-    print('Including ' + inclfile)
-    inclroots[inclfile] = etree.parse(inclfile).getroot()
+xsdroots = {}
+for file in xsdfiles:
+    print('Adding ' + file)
+    xsdroots[file] = etree.parse(file).getroot()
 
-parsefile(root)
+newxml = etree.Element(rootelementname)
+rootnode = xsdroots[xsdfiles[0]].findall(NS + 'complexType[@name="' + rootelementtype + '"]')
+if len(rootnode) == 1:
+    parsefile(rootnode[0], newxml)
+    xmlfilename = rootelementname + '.' + datetime.datetime.now().strftime("%Y-%m-%d") + '.xml'
+    writeFile('<?xml version="1.0" encoding="utf-8"?>' + etree.tostring(newxml, encoding="unicode"), xmlfilename)
+else:
+    print('No root node: Name= ' + rootelementname + ' Type=' + rootelementtype)
+
