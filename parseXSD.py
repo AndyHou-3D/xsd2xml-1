@@ -36,7 +36,7 @@ def parsefile(node, parent, indent=''):
 
             childxml = etree.SubElement(parent, child.attrib['name'])
             display=[' ']
-            for attr in ['minOccurs', 'maxOccurs']:
+            for attr in ['minOccurs', 'maxOccurs', 'nillable']:
                 if attr in child.attrib:
                     childxml.set(attr, child.attrib[attr])
 
