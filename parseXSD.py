@@ -29,6 +29,10 @@ def searchIncludes(NS, typename):
 def parsefile(node, parent, indent=''):
     for child in node:
         if child.tag == NS+'element':
+            if 'ref' in child.attrib or 'name' not in child.attrib:
+                print(child.tag, child.attrib, '"ref" used or "name" missing. Quitting.')
+                sys.exit()
+
             childxml = etree.SubElement(parent, child.attrib['name'])
             display=[' ']
             for attr in ['minOccurs', 'maxOccurs']:
