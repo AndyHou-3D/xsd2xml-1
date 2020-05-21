@@ -35,9 +35,12 @@ def parsefile(node, parent, indent=''):
                 if attr in child.attrib:
                     childxml.set(attr, child.attrib[attr])
 
-            typenode = searchIncludes(NS, child.attrib['type'])
-            if typenode is not None:
-                parsefile(typenode, childxml, indent+'  ')
+            if 'type' not in child.attrib:
+                parsefile(child, childxml, indent+'  ')
+            else:
+                typenode = searchIncludes(NS, child.attrib['type'])
+                if typenode is not None:
+                    parsefile(typenode, childxml, indent+'  ')
         elif child.tag == NS+'restriction':
             if showrestrictions:
                 parent.text = child.attrib['base']
