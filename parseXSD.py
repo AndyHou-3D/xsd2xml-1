@@ -2,9 +2,10 @@ import xml.etree.ElementTree as etree
 import sys
 import datetime
 
-# This produces a full description of the elements given in a Schema definition.
+# This produces a full XML-file with all elements given in a Schema definition.
+# Also adds minOccurs and maxOccurs to element, and the restrictions, maxlength, minlength and pattern, if any.
 # I.e. given a primary XSD, which possibly includes others, this will search for all elements and their descriptions.
-# Should I check for multiple targetnamespaces?
+# Should I check for targetnamespace(s)?
 
 #--------------------------------------------------------------------------------------------------
 def writeFile(string, filename):
@@ -63,8 +64,8 @@ def parsefile(node, parent, indent=''):
 ###############################
 
 # The root element:
-rootelementname = 'IE4N10'
-rootelementtype = 'IE4N10Type'
+rootelementname = 'IE4N10'        # Used in the xml produced.
+rootelementtype = 'IE4N10Type'    # Used to kick things off. This is the first node I look for.
 # This contains the namespace of the XSD, not the targetnamespace of the XML specified by the XSD:
 NS = '{http://www.w3.org/2001/XMLSchema}'
 # All xsd files describing this xml:
