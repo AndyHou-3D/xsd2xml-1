@@ -63,6 +63,9 @@ def parsefile(node, parent, indent=''):
 
 ###############################
 
+# I look for the given root element type, which I expect to find as a complexType.
+# This should be changed to a more general solution.
+#
 # The root element:
 rootelementname = 'IE4N10'        # Used in the xml produced.
 rootelementtype = 'IE4N10Type'    # Used to kick things off. This is the first node I look for.
