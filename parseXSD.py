@@ -71,16 +71,14 @@ def parsefile(node, newxml, indent=''):
 
 ###############################
 
-# I look for the given root element type, which I expect to find as a complexType.
-# This should be changed to a more general solution.
-#
 # The root element:
-rootelementname = 'IE4N10'        # Used in the xml produced.
+rootelementname = 'IE4N10'        # Used in the filename.
 
 # This contains the namespace of the XSD, not the targetnamespace of the XML specified by the XSD:
 NS = '{http://www.w3.org/2001/XMLSchema}'
 
-# All xsd files describing this xml:
+# All xsd files describing this xml.
+# NB: Primary file must come first.
 xsdfiles = ['IE4N10.xsd', 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
 
 showrestrictions = True
