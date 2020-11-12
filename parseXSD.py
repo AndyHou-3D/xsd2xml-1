@@ -42,7 +42,8 @@ def parsefile(node, newxml, indent=''):
                 print(child.tag, child.attrib, '"ref" used or "name" missing. Quitting.')
                 sys.exit()
 
-            childxml = etree.SubElement(newxml, child.attrib['name'])
+            else:
+                childxml = etree.SubElement(newxml, child.attrib['name'])
 
             for attr in ['minOccurs', 'maxOccurs', 'nillable']:
                 if attr in child.attrib and showrestrictions:
@@ -63,8 +64,8 @@ def parsefile(node, newxml, indent=''):
                     newxml.text = newxml.text + ' ' + child.attrib['value']
                 else:
                     newxml.text = child.attrib['value']
-        elif child.tag.endswith('Type'):
-            # Skipping TYPE: Already processed via searchIncludes.
+        elif child.tag in [NS+'simpleType', NS+'complexType']:
+            print('#Skipping ' + child.tag + ' - already processed via searchIncludes.')
             continue
         else:
             parsefile(child, newxml, indent+'  ')
@@ -81,7 +82,7 @@ NS = '{http://www.w3.org/2001/XMLSchema}'
 # NB: Primary file must come first.
 xsdfiles = ['IE4N10.xsd', 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
 
-showrestrictions = True
+showrestrictions = False
 
 # Parse the xsd files, and store their respective roots
 # under the filename.
@@ -94,8 +95,15 @@ if mainroot.tag == NS+'schema' and 'targetNamespace' in mainroot.attrib:
     tns = mainroot.attrib['targetNamespace']
     print('TNS=' + tns)
 
-newxml = etree.Element('dummyroot')
+newtree = etree.ElementTree()
+newxml = etree.Element(None)
 parsefile(mainroot, newxml)
+newtree._setroot(newxml)
+newtree.getroot().attrib['xmlns'] = tns
+# NB: Default namespace is NOT set, despite various attempts...
+#
 xmlfilename = rootelementname + '.v2.' + datetime.datetime.now().strftime("%Y-%m-%d") + '.xml'
-writeFile('<?xml version="1.0" encoding="utf-8"?>' + etree.tostring(newxml, encoding="unicode"), xmlfilename)
-print('Saved to file ' + xmlfilename)
+newtree.write(xmlfilename, encoding="unicode", xml_declaration=True)
+# newtree.write(xmlfilename, encoding="unicode", xml_declaration=True, default_namespace=tns)
+
+
