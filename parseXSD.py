@@ -8,6 +8,16 @@ import datetime
 # Should I check for targetnamespace(s)?
 
 #--------------------------------------------------------------------------------------------------
+def search4Includes(files):
+    root = etree.parse(files[len(files)-1]).getroot()
+    includes = root.findall('.//'+NS+'include')
+    
+    for inc in includes:
+        filefound = inc.attrib['schemaLocation']
+        files.append(filefound)
+        search4Includes(files)
+
+
 def writeFile(string, filename):
     f = open(filename, "w", encoding="utf-8")
     f.write(string)
@@ -72,15 +82,18 @@ def parsefile(node, newxml, indent=''):
 
 ###############################
 
-# The root element:
-rootelementname = 'IE4N10'        # Used in the filename.
-
 # This contains the namespace of the XSD, not the targetnamespace of the XML specified by the XSD:
 NS = '{http://www.w3.org/2001/XMLSchema}'
 
 # All xsd files describing this xml.
 # NB: Primary file must come first.
-xsdfiles = ['IE4N10.xsd', 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
+#xsdfiles = ['IE4N10.xsd']
+##, 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
+
+xsdfiles = [sys.argv[1]]
+search4Includes(xsdfiles)
+rootelementname = xsdfiles[0].split('.', 2)[0]
+print('Includes: ' + ', '.join(xsdfiles))
 
 showrestrictions = False
 
@@ -95,15 +108,18 @@ if mainroot.tag == NS+'schema' and 'targetNamespace' in mainroot.attrib:
     tns = mainroot.attrib['targetNamespace']
     print('TNS=' + tns)
 
+etree.register_namespace('', tns)
+
 newtree = etree.ElementTree()
 newxml = etree.Element(None)
-parsefile(mainroot, newxml)
 newtree._setroot(newxml)
-newtree.getroot().attrib['xmlns'] = tns
+parsefile(mainroot, newxml)
+
+#newtree.getroot().attrib['xmlns'] = tns
 # NB: Default namespace is NOT set, despite various attempts...
 #
 xmlfilename = rootelementname + '.v2.' + datetime.datetime.now().strftime("%Y-%m-%d") + '.xml'
-newtree.write(xmlfilename, encoding="unicode", xml_declaration=True)
-# newtree.write(xmlfilename, encoding="unicode", xml_declaration=True, default_namespace=tns)
+newtree.write(xmlfilename, encoding='utf-8', xml_declaration=True)
+#newtree.write(xmlfilename, encoding="utf-8", xml_declaration=True, default_namespace=tns)
 
 
