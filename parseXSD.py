@@ -2,11 +2,6 @@ import xml.etree.ElementTree as etree
 import sys
 import datetime
 
-# This produces a full XML-file with all elements given in a Schema definition.
-# Also adds minOccurs and maxOccurs to element, and the restrictions, maxlength, minlength and pattern, if any.
-# I.e. given a primary XSD, which possibly includes others, this will search for all elements and their descriptions.
-# Should I check for targetnamespace(s)?
-
 #--------------------------------------------------------------------------------------------------
 def search4Includes(files):
     root = etree.parse(files[len(files)-1]).getroot()
@@ -54,6 +49,8 @@ def parsefile(node, newxml, indent=''):
 
             else:
                 childxml = etree.SubElement(newxml, child.attrib['name'])
+                if rootelementname == child.attrib['name']:
+                    childxml.set('xmlns', targetNS)  # Add default namespace to root element.
 
             for attr in ['minOccurs', 'maxOccurs', 'nillable']:
                 if attr in child.attrib and showrestrictions:
@@ -82,13 +79,25 @@ def parsefile(node, newxml, indent=''):
 
 ###############################
 
+# This produces a full XML-file with all elements given in a Schema definition.
+# If showrestrictions is True, also adds minOccurs and maxOccurs to element, and the restrictions, maxlength, minlength and pattern, if any.
+# I.e. given a primary XSD, which may include other XSD files, this will search for all elements and their descriptions.
+
+# Takes 1 arg, the filename of the primary XSD file to use.
+# I This will be searched for any other include statements.
+#
+# Assumptions:
+# At the moment, I expect all includes to refer to files in the same directory as the primary XSD.
+# The primary XSD is searched for include statements, and if any found, they are searched recursively.
+# The filename (without type) of the primary XSD is used as the filenameof the output file, with XML as type.
+#
+#
 # This contains the namespace of the XSD, not the targetnamespace of the XML specified by the XSD:
 NS = '{http://www.w3.org/2001/XMLSchema}'
 
-# All xsd files describing this xml.
-# NB: Primary file must come first.
-#xsdfiles = ['IE4N10.xsd']
-##, 'ctypes.xsd', 'htypes.xsd', 'stypes.xsd']
+# This will contain the target namespace.
+targetNS = None
+
 
 xsdfiles = [sys.argv[1]]
 search4Includes(xsdfiles)
@@ -105,21 +114,21 @@ for file in xsdfiles:
 
 mainroot = xsdroots[xsdfiles[0]]
 if mainroot.tag == NS+'schema' and 'targetNamespace' in mainroot.attrib:
-    tns = mainroot.attrib['targetNamespace']
-    print('TNS=' + tns)
+    targetNS = mainroot.attrib['targetNamespace']
+    print('targetNS=' + targetNS)
 
-etree.register_namespace('', tns)
+etree.register_namespace('', targetNS)
 
 newtree = etree.ElementTree()
 newxml = etree.Element(None)
 newtree._setroot(newxml)
 parsefile(mainroot, newxml)
 
-#newtree.getroot().attrib['xmlns'] = tns
+#newtree.getroot().attrib['xmlns'] = targetNS
 # NB: Default namespace is NOT set, despite various attempts...
-#
-xmlfilename = rootelementname + '.v2.' + datetime.datetime.now().strftime("%Y-%m-%d") + '.xml'
+
+xmlfilename = rootelementname + '.' + datetime.datetime.now().strftime("%Y-%m-%d") + '.xml'
 newtree.write(xmlfilename, encoding='utf-8', xml_declaration=True)
-#newtree.write(xmlfilename, encoding="utf-8", xml_declaration=True, default_namespace=tns)
+#newtree.write(xmlfilename, encoding="utf-8", xml_declaration=True, default_namespace=targetNS)
 
 
