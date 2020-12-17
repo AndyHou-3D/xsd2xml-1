@@ -46,7 +46,6 @@ def parsefile(node, newxml, indent=''):
             if 'ref' in child.attrib or 'name' not in child.attrib:
                 print(child.tag, child.attrib, '"ref" used or "name" missing. Quitting.')
                 sys.exit()
-
             else:
                 childxml = etree.SubElement(newxml, child.attrib['name'])
                 if rootelementname == child.attrib['name']:
@@ -60,7 +59,7 @@ def parsefile(node, newxml, indent=''):
                 typenode = searchIncludes(NS, child.attrib['type'])
                 parsefile(typenode, childxml, indent+'  ')
             else:
-                parsefile(child, indent+'  ')
+                parsefile(child, childxml, indent+'  ')
         elif child.tag == NS+'restriction':
             if showrestrictions:
                 newxml.text = child.attrib['base']
@@ -71,8 +70,11 @@ def parsefile(node, newxml, indent=''):
                     newxml.text = newxml.text + ' ' + child.attrib['value']
                 else:
                     newxml.text = child.attrib['value']
-        elif child.tag in [NS+'simpleType', NS+'complexType']:
-            print('#Skipping ' + child.tag + ' - already processed via searchIncludes.')
+        elif child.tag in [NS+'simpleType', NS+'complexType'] and 'name' in child.attrib:
+            # I skip type declarations if they have a name, because I assume these will be referred to somewhere else,
+            # and they will be processed by that reference - see above where searchIncludes is called.
+            # This might be simplistic, but works for now.
+            print('#Skipping ' + child.tag + ' name=' + child.attrib['name'] + ' - already processed via searchIncludes.')
             continue
         else:
             parsefile(child, newxml, indent+'  ')
